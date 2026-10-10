@@ -1,0 +1,22 @@
+name: youpage
+description: YouPage — кастомный клиент EduPage с режимом приватности оценок.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+  dynamic_color: ^1.7.0
+  animations: ^2.0.11
+  flutter_secure_storage: ^9.2.4
+  shared_preferences: ^2.3.3
+  dio: ^5.7.0
+  dio_cookie_manager: ^3.1.1
+  cookie_jar: ^4.0.8
+
+flutter:
+  uses-material-design: true
