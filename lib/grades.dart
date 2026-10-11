@@ -1,10 +1,11 @@
 import 'package:eduapge2/api.dart';
+import 'package:eduapge2/components/hideable_grade.dart';
+import 'package:eduapge2/core/hidden_grades_store.dart';
 import 'package:eduapge2/main.dart';
 import 'package:flutter/material.dart';
 import 'package:eduapge2/l10n/app_localizations.dart';
 import 'package:flutter_session_manager/flutter_session_manager.dart';
 import 'package:eduapge2/components/glass.dart';
-import 'package:eduapge2/components/privacy_grade.dart';
 import 'package:eduapge2/core/privacy_settings.dart';
 
 class GradesPage extends StatefulWidget {
@@ -40,6 +41,27 @@ class GradesPageState extends BaseState<GradesPage> {
     setState(() {}); //refresh UI
   }
 
+  Future<void> _hideGrade(String id) async {
+    await hiddenGradesStore.hide(id);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+            'Оценка скрыта. Нажмите «Вернуть», чтобы восстановить её.'),
+        action: SnackBarAction(
+          label: 'Вернуть',
+          onPressed: () => _restoreGrade(id),
+        ),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  Future<void> _restoreGrade(String id) async {
+    await hiddenGradesStore.restore(id);
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,16 +71,21 @@ class GradesPageState extends BaseState<GradesPage> {
           ListenableBuilder(
             listenable: privacySettings,
             builder: (context, _) => IconButton(
-              tooltip: privacySettings.enabled ? 'Показать оценки' : 'Скрыть оценки',
-              onPressed: () => privacySettings.setEnabled(!privacySettings.enabled),
-              icon: Icon(privacySettings.enabled ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+              tooltip:
+                  privacySettings.enabled ? 'Показать оценки' : 'Скрыть оценки',
+              onPressed: () =>
+                  privacySettings.setEnabled(!privacySettings.enabled),
+              icon: Icon(privacySettings.enabled
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined),
             ),
           ),
           PopupMenuButton<GradeMaskStyle>(
             tooltip: 'Способ скрытия оценок',
             onSelected: privacySettings.setStyle,
             itemBuilder: (context) => const [
-              PopupMenuItem(value: GradeMaskStyle.blur, child: Text('Размытие')),
+              PopupMenuItem(
+                  value: GradeMaskStyle.blur, child: Text('Размытие')),
               PopupMenuItem(value: GradeMaskStyle.dots, child: Text('Точки')),
             ],
           ),
@@ -131,44 +158,51 @@ class GradesPageState extends BaseState<GradesPage> {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        (await data.dbi.getSubject(key)).name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          overflow: TextOverflow.ellipsis,
-                          fontWeight: FontWeight.bold,
-                        ),
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      (await data.dbi.getSubject(key)).name,
+                      style: TextStyle(
+                        fontSize: 16,
+                        overflow: TextOverflow.ellipsis,
+                        fontWeight: FontWeight.bold,
                       ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      PrivacyGrade(
-                        value: g.map((grade) => grade.data).join(', '),
-                        style: TextStyle(
-                          fontSize: 12,
+                    ),
+                  ],
+                ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: g
+                      .map(
+                        (grade) => HideableGrade(
+                          id: grade.id,
+                          value: grade.data,
+                          onHide: _hideGrade,
+                          onRestore: _restoreGrade,
                         ),
                       )
-                    ],
-                  ),
-                ],
-              ),
-              Column(
-                children: [
-                  PrivacyGrade(value: avg.toStringAsFixed(2), style: const TextStyle(fontSize: 24)),
-                ],
-              ),
-            ],
+                      .toList(),
+                ),
+              ],
+            ),
+            Column(
+              children: [
+                HideableGrade(
+                  id: 'avg_$key',
+                  value: avg.toStringAsFixed(2),
+                  onHide: _hideGrade,
+                  onRestore: _restoreGrade,
+                ),
+              ],
+            ),
+          ],
         ),
       ));
     }

@@ -7,6 +7,7 @@ import 'package:eduapge2/icanteen_setup.dart';
 import 'package:eduapge2/main.dart';
 import 'package:eduapge2/message.dart';
 import 'package:eduapge2/messages.dart';
+import 'package:eduapge2/screens/hidden_grades.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_session_manager/flutter_session_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -625,6 +626,53 @@ class HomePageState extends BaseState<HomePage> {
               ),
             ),
             const Divider(),
+            InkWell(
+              highlightColor: Colors.transparent,
+              splashColor: Colors.transparent,
+              child: ListTile(
+                leading: const Icon(Icons.visibility_off_rounded),
+                title: const Text('Скрытые оценки'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HiddenGradesScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+            ListenableBuilder(
+              listenable: appThemeController,
+              builder: (context, _) => PopupMenuButton<AppThemeMode>(
+                tooltip: 'Выбор темы',
+                initialValue: appThemeController.mode,
+                onSelected: appThemeController.setMode,
+                itemBuilder: (context) => const [
+                  PopupMenuItem(
+                      value: AppThemeMode.system, child: Text('Системная')),
+                  PopupMenuItem(
+                      value: AppThemeMode.light, child: Text('Светлая')),
+                  PopupMenuItem(
+                      value: AppThemeMode.dark, child: Text('Тёмная')),
+                  PopupMenuItem(
+                      value: AppThemeMode.amoled, child: Text('AMOLED')),
+                ],
+                child: ListTile(
+                  leading: const Icon(Icons.palette_rounded),
+                  title: const Text('Тема интерфейса'),
+                  trailing: Text(
+                    appThemeController.mode == AppThemeMode.light
+                        ? 'Светлая'
+                        : appThemeController.mode == AppThemeMode.dark
+                            ? 'Тёмная'
+                            : appThemeController.mode == AppThemeMode.amoled
+                                ? 'AMOLED'
+                                : 'Системная',
+                  ),
+                ),
+              ),
+            ),
             InkWell(
               highlightColor: Colors.transparent,
               splashColor: Colors.transparent,

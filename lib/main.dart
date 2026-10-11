@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:eduapge2/api.dart';
+import 'package:eduapge2/core/hidden_grades_store.dart';
 import 'package:eduapge2/homework.dart';
 import 'package:eduapge2/icanteen.dart';
 import 'package:eduapge2/load.dart';
@@ -14,15 +15,58 @@ import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_session_manager/flutter_session_manager.dart';
 import 'package:eduapge2/l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'home.dart';
 import 'package:toastification/toastification.dart';
 import 'package:eduapge2/components/glass.dart';
 import 'package:eduapge2/core/privacy_settings.dart';
 import 'package:eduapge2/core/runtime_config.dart';
 
+enum AppThemeMode { system, light, dark, amoled }
+
+class AppThemeController extends ChangeNotifier {
+  static const _key = 'app_theme_mode';
+  AppThemeMode _mode = AppThemeMode.system;
+
+  AppThemeMode get mode => _mode;
+
+  ThemeMode get themeMode {
+    switch (_mode) {
+      case AppThemeMode.light:
+        return ThemeMode.light;
+      case AppThemeMode.dark:
+      case AppThemeMode.amoled:
+        return ThemeMode.dark;
+      case AppThemeMode.system:
+        return ThemeMode.system;
+    }
+  }
+
+  Future<void> load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_key);
+    _mode = AppThemeMode.values.firstWhere(
+      (value) => value.name == raw,
+      orElse: () => AppThemeMode.system,
+    );
+    notifyListeners();
+  }
+
+  Future<void> setMode(AppThemeMode value) async {
+    _mode = value;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, value.name);
+  }
+}
+
+final appThemeController = AppThemeController();
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await privacySettings.load();
+  await hiddenGradesStore.load();
+  await appThemeController.load();
   runApp(const MyApp());
 }
 
@@ -72,9 +116,23 @@ class MyApp extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: Theme.of(context).brightness == Brightness.dark
-                    ? const [Color(0xff08111f), Color(0xff1c1231), Color(0xff071b20)]
-                    : const [Color(0xffdff5ff), Color(0xffefe3ff), Color(0xffffebdc)],
+                colors: appThemeController.mode == AppThemeMode.amoled
+                    ? const [
+                        Color(0xFF000000),
+                        Color(0xFF03070A),
+                        Color(0xFF000000)
+                      ]
+                    : Theme.of(context).brightness == Brightness.dark
+                        ? const [
+                            Color(0xff08111f),
+                            Color(0xff1c1231),
+                            Color(0xff071b20)
+                          ]
+                        : const [
+                            Color(0xffdff5ff),
+                            Color(0xffefe3ff),
+                            Color(0xffffebdc)
+                          ],
               ),
             ),
             child: child ?? const SizedBox.shrink(),
@@ -86,11 +144,13 @@ class MyApp extends StatelessWidget {
             ),
             useMaterial3: true,
             scaffoldBackgroundColor: Colors.transparent,
-            appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent, elevation: 0),
+            appBarTheme: const AppBarTheme(
+                backgroundColor: Colors.transparent, elevation: 0),
             cardTheme: CardThemeData(
-              color: Colors.white.withOpacity(.68),
+              color: Colors.white.withValues(alpha: .68),
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(26)),
             ),
           ),
           darkTheme: ThemeData(
@@ -99,15 +159,23 @@ class MyApp extends StatelessWidget {
               Brightness.dark,
             ),
             useMaterial3: true,
-            scaffoldBackgroundColor: Colors.transparent,
-            appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent, elevation: 0),
+            scaffoldBackgroundColor:
+                appThemeController.mode == AppThemeMode.amoled
+                    ? Colors.black
+                    : Colors.transparent,
+            appBarTheme: const AppBarTheme(
+                backgroundColor: Colors.transparent, elevation: 0),
             cardTheme: CardThemeData(
-              color: Colors.white.withOpacity(.08),
+              color: appThemeController.mode == AppThemeMode.amoled
+                  ? Colors.white.withValues(alpha: .06)
+                  : Colors.white.withValues(alpha: .08),
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(26)),
             ),
+            dialogTheme: const DialogThemeData(backgroundColor: Colors.black87),
           ),
-          themeMode: ThemeMode.system,
+          themeMode: appThemeController.themeMode,
           home: const PageBase(),
         ),
       );

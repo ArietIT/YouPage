@@ -1,5 +1,4 @@
 // ignore_for_file: unused_import
-import 'package:eduapge2/firebase_options.dart';
 import 'package:eduapge2/grades.dart';
 import 'package:eduapge2/home.dart';
 import 'package:eduapge2/homework.dart';

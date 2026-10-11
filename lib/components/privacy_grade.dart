@@ -5,9 +5,10 @@ import 'package:eduapge2/core/privacy_settings.dart';
 import 'package:flutter/material.dart';
 
 class PrivacyGrade extends StatefulWidget {
-  const PrivacyGrade({super.key, required this.value, this.style});
+  const PrivacyGrade({super.key, required this.value, this.style, this.onTripleTap});
   final String value;
   final TextStyle? style;
+  final VoidCallback? onTripleTap;
 
   @override
   State<PrivacyGrade> createState() => _PrivacyGradeState();
@@ -16,6 +17,8 @@ class PrivacyGrade extends StatefulWidget {
 class _PrivacyGradeState extends State<PrivacyGrade> {
   Timer? _timer;
   bool _revealed = false;
+  DateTime? _lastTap;
+  int _tapCount = 0;
 
   @override
   void dispose() {
@@ -29,6 +32,19 @@ class _PrivacyGradeState extends State<PrivacyGrade> {
     _timer = Timer(const Duration(seconds: 3), () {
       if (mounted) setState(() => _revealed = false);
     });
+  }
+
+  void _handleTap() {
+    _reveal();
+    final now = DateTime.now();
+    if (_lastTap == null || now.difference(_lastTap!) > const Duration(milliseconds: 600)) {
+      _tapCount = 0;
+    }
+    _lastTap = now;
+    if (++_tapCount == 3) {
+      _tapCount = 0;
+      widget.onTripleTap?.call();
+    }
   }
 
   @override
@@ -46,7 +62,7 @@ class _PrivacyGradeState extends State<PrivacyGrade> {
           label: 'Оценка скрыта',
           excludeSemantics: true,
           button: true,
-          child: GestureDetector(onTap: _reveal, onLongPress: _reveal, child: AnimatedSwitcher(duration: const Duration(milliseconds: 180), child: KeyedSubtree(key: ValueKey(visible), child: masked))),
+          child: GestureDetector(onTap: _handleTap, onLongPress: _reveal, child: AnimatedSwitcher(duration: const Duration(milliseconds: 180), child: KeyedSubtree(key: ValueKey(visible), child: masked))),
         );
       },
     );

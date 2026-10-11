@@ -24,6 +24,8 @@ dependencies:
   toastification: ^3.0.3
   auto_size_text: ^3.0.0
   introduction_screen: ^4.0.0
+  flutter_secure_storage: ^9.2.4
+  local_auth: ^2.3.0
 dev_dependencies:
   integration_test:
     sdk: flutter
