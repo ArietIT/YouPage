@@ -1,22 +1,37 @@
-name: youpage
-description: YouPage — кастомный клиент EduPage с режимом приватности оценок.
+name: eduapge2
+description: YouPage — неофициальный клиент EduPage в стиле Liquid Glass.
 publish_to: none
 version: 1.0.0+1
-
 environment:
-  sdk: ">=3.4.0 <4.0.0"
-
+  sdk: ^3.2.0
 dependencies:
   flutter:
     sdk: flutter
-  flutter_riverpod: ^2.6.1
-  dynamic_color: ^1.7.0
-  animations: ^2.0.11
-  flutter_secure_storage: ^9.2.4
-  shared_preferences: ^2.3.3
-  dio: ^5.7.0
-  dio_cookie_manager: ^3.1.1
-  cookie_jar: ^4.0.8
-
+  flutter_localizations:
+    sdk: flutter
+  dio: ^5.9.0
+  shared_preferences: ^2.5.3
+  flutter_session_manager: ^1.0.3
+  connectivity_plus: ^7.0.0
+  intl: ^0.20.2
+  html_unescape: ^2.0.0
+  flutter_cached_pdfview: ^0.4.3
+  url_launcher: ^6.3.2
+  flutter_linkify: ^6.0.0
+  dynamic_color: ^1.8.1
+  flutter_displaymode: ^0.7.0
+  app_links: ^6.4.1
+  toastification: ^3.0.3
+  auto_size_text: ^3.0.0
+  introduction_screen: ^4.0.0
+dev_dependencies:
+  integration_test:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
 flutter:
+  assets:
+    - assets/EduPage2/png/logo-no-background.png
+  generate: true
   uses-material-design: true

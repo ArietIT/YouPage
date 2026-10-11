@@ -1,4 +1,4 @@
-name: Сборка APK
+name: Сборка YouPage
 
 on:
   push:
@@ -12,41 +12,54 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Получить исходный код
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - uses: actions/setup-java@v4
+      - name: Настроить Java
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: '17'
 
-      - uses: subosito/flutter-action@v2
+      - name: Настроить Flutter
+        uses: subosito/flutter-action@v2
         with:
           channel: stable
-          cache: true
 
-      # Генерируем актуальную Android-обвязку (gradle, manifest) под текущую версию Flutter
-      - name: Создать Android-scaffold
+      - name: Установить зависимости
+        run: flutter pub get
+
+      - name: Статический анализ
+        run: flutter analyze
+
+      - name: Подключить пользовательскую подпись
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
         run: |
-          flutter create --platform=android --org com.youpage --project-name youpage /tmp/scaffold
-          rm -rf android
-          cp -r /tmp/scaffold/android android
-          sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <application#' android/app/src/main/AndroidManifest.xml
-          sed -i 's#android:label="youpage"#android:label="YouPage"#' android/app/src/main/AndroidManifest.xml
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+            printf 'storeFile=upload-keystore.jks\nkeyAlias=%s\nkeyPassword=%s\nstorePassword=%s\n' "$ANDROID_KEY_ALIAS" "$ANDROID_KEY_PASSWORD" "$ANDROID_STORE_PASSWORD" > android/key.properties
+          else
+            echo "Ключ не задан: используется отладочная подпись."
+          fi
 
-      - run: flutter pub get
-
-      - name: Сборка release APK
+      - name: Собрать release APK
         run: flutter build apk --release
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: youpage-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+      - name: Подготовить архив исходников
+        run: git archive --format=zip --output=youpage-source.zip HEAD
 
-      - name: Опубликовать в Releases
-        continue-on-error: true
+      - name: Создать релиз
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: YouPage сборка ${{ github.run_number }}
-          files: build/app/outputs/flutter-apk/app-release.apk
+          name: YouPage build-${{ github.run_number }}
+          body_path: RELEASE_NOTES.md
+          files: |
+            build/app/outputs/flutter-apk/app-release.apk
+            youpage-source.zip
